@@ -52,5 +52,56 @@
     lazyload();
     document.addEventListener('scroll', lazyload);
 </script>
+
+<script>
+    function check_webp_feature(feature, callback) {
+        var kTestImages = {
+            lossy: "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
+            lossless: "UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==",
+            alpha: "UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAARBxAR/Q9ERP8DAABWUDggGAAAABQBAJ0BKgEAAQAAAP4AAA3AAP7mtQAAAA==",
+            animation: "UklGRlIAAABXRUJQVlA4WAoAAAASAAAAAAAAAAAAQU5JTQYAAAD/////AABBTk1GJgAAAAAAAAAAAAAAAAAAAGQAAABWUDhMDQAAAC8AAAAQBxAREYiI/gcA"
+        };
+        var img = new Image();
+        img.onload = function () {
+            var result = (img.width > 0) && (img.height > 0);
+            callback(feature, result);
+        };
+        img.onerror = function () {
+            callback(feature, false);
+        };
+        img.src = "data:image/webp;base64," + kTestImages[feature];
+    }
+    check_webp_feature('lossy', (f, r) => {
+        var viewHeight = document.documentElement.clientHeight;
+        function lazyload() {
+            var eles = document.querySelectorAll('img[data-src]');
+            Array.prototype.forEach.call(eles, function (item, index) {
+                var rect;
+                if (item.dataset.src === '' || window.getComputedStyle(item, null).display == 'none') {
+                    return;
+                }
+                rect = item.getBoundingClientRect();
+                if (rect.bottom >= 0 && rect.top < viewHeight) {
+                    !function () {
+                        var img = new Image();
+                        if (r && item.dataset.webpsrc) {
+                            img.src = item.dataset.webpsrc;
+                        } else {
+                            img.src = item.dataset.src;
+                        }
+                        img.onload = function () {
+                            item.src = img.src;
+                        }
+                        item.removeAttribute('data-webpsrc');
+                        item.removeAttribute('data-src');
+                    }();
+                }
+            })
+        }
+
+        lazyload();
+        document.addEventListener('scroll', lazyload);
+    })
+</script>
 </body>
 </html>
